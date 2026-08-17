@@ -1,0 +1,48 @@
+description: >
+  Standalone job that checks out the repo and runs the version-bump check.
+  Use this if you don't already have a job to attach the command to;
+  otherwise prefer composing the `check` command into an existing job.
+parameters:
+  manifest-type:
+    type: enum
+    enum: ["python-pyproject", "node-package-json", "generic"]
+  manifest-path:
+    type: string
+    default: ""
+  version-pattern:
+    type: string
+    default: ""
+  base-branch:
+    type: string
+    default: "main"
+  require-changelog:
+    type: boolean
+    default: true
+  changelog-path:
+    type: string
+    default: "CHANGELOG.md"
+  changelog-heading-pattern:
+    type: string
+    default: "## \\[{version}\\]"
+  exempt-paths:
+    type: string
+    default: ""
+  require-increase:
+    type: boolean
+    default: false
+  executor:
+    type: executor
+    default: default
+executor: << parameters.executor >>
+steps:
+  - checkout
+  - check:
+      manifest-type: << parameters.manifest-type >>
+      manifest-path: << parameters.manifest-path >>
+      version-pattern: << parameters.version-pattern >>
+      base-branch: << parameters.base-branch >>
+      require-changelog: << parameters.require-changelog >>
+      changelog-path: << parameters.changelog-path >>
+      changelog-heading-pattern: << parameters.changelog-heading-pattern >>
+      exempt-paths: << parameters.exempt-paths >>
+      require-increase: << parameters.require-increase >>

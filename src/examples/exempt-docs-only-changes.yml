@@ -1,0 +1,22 @@
+description: >
+  Skip the check entirely when a PR only touches docs/config (mirrors the
+  ad-hoc exemptions some repos previously hand-rolled), and require the new
+  version to actually be greater than the base branch's, not just different.
+usage:
+  version: 2.1
+  orbs:
+    version-bump: scale-venture-partners/version-bump@1.0.0
+  workflows:
+    build:
+      jobs:
+        - test
+  jobs:
+    test:
+      docker:
+        - image: cimg/python:3.12
+      steps:
+        - checkout
+        - version-bump/check:
+            manifest-type: python-pyproject
+            require-increase: true
+            exempt-paths: ".circleci/*,docs/*,*.md,.gitignore,Makefile"

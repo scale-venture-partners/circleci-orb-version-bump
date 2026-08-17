@@ -1,0 +1,72 @@
+description: >
+  Check that a package manifest's version was bumped relative to the base
+  branch (and, optionally, that a CHANGELOG documents it). Fails the step if
+  the version wasn't changed. Requires the repo to already be checked out
+  and `origin` to be a usable remote.
+parameters:
+  manifest-type:
+    type: enum
+    enum: ["python-pyproject", "node-package-json", "generic"]
+    description: Which kind of manifest to read the version from.
+  manifest-path:
+    type: string
+    default: ""
+    description: >
+      Path to the manifest file, relative to the repo root. Defaults to
+      "pyproject.toml" for python-pyproject and "package.json" for
+      node-package-json. Required for generic.
+  version-pattern:
+    type: string
+    default: ""
+    description: >
+      Only used when manifest-type is "generic": an extended regular
+      expression (as accepted by `sed -E`) with exactly one capturing group
+      matching the version string.
+  base-branch:
+    type: string
+    default: "main"
+    description: Branch to compare the version against.
+  require-changelog:
+    type: boolean
+    default: true
+    description: >
+      Require changelog-path to contain a heading matching
+      changelog-heading-pattern for the new version.
+  changelog-path:
+    type: string
+    default: "CHANGELOG.md"
+  changelog-heading-pattern:
+    type: string
+    default: "## \\[{version}\\]"
+    description: >
+      Extended regex checked against changelog-path, with "{version}"
+      substituted for the new version (regex-escaped).
+  exempt-paths:
+    type: string
+    default: ""
+    description: >
+      Comma-separated shell glob patterns (e.g. "docs/*,*.md,Makefile"). If
+      every file changed relative to base-branch matches at least one
+      pattern, the check is skipped entirely.
+  require-increase:
+    type: boolean
+    default: false
+    description: >
+      Require the new version to be numerically greater than the base
+      branch's version (dotted-numeric comparison), not just different from
+      it. Off by default so adopting this orb never tightens behavior
+      relative to a hand-rolled "must differ" check.
+steps:
+  - run:
+      name: Check version bump
+      environment:
+        MANIFEST_TYPE: << parameters.manifest-type >>
+        MANIFEST_PATH: << parameters.manifest-path >>
+        VERSION_PATTERN: << parameters.version-pattern >>
+        BASE_BRANCH: << parameters.base-branch >>
+        REQUIRE_CHANGELOG: << parameters.require-changelog >>
+        CHANGELOG_PATH: << parameters.changelog-path >>
+        CHANGELOG_HEADING_PATTERN: << parameters.changelog-heading-pattern >>
+        EXEMPT_PATHS: << parameters.exempt-paths >>
+        REQUIRE_INCREASE: << parameters.require-increase >>
+      command: <<include(scripts/check-version-bump.sh)>>

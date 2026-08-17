@@ -1,0 +1,9 @@
+version: 2.1
+description: >
+  Fail CI when a package manifest's version wasn't bumped relative to the
+  base branch (with optional CHANGELOG enforcement). Supports Python
+  (pyproject.toml) and Node (package.json) out of the box, plus a generic
+  regex-based fallback for anything else.
+display:
+  home_url: https://github.com/scale-venture-partners/circleci-orb-version-bump
+  source_url: https://github.com/scale-venture-partners/circleci-orb-version-bump

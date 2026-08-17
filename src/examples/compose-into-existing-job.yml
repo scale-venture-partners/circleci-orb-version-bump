@@ -1,0 +1,21 @@
+description: >
+  Add the version-bump check as a step inside a job you already have,
+  reusing its existing executor and checkout.
+usage:
+  version: 2.1
+  orbs:
+    version-bump: scale-venture-partners/version-bump@1.0.0
+  workflows:
+    build:
+      jobs:
+        - test
+  jobs:
+    test:
+      docker:
+        - image: cimg/python:3.12
+      steps:
+        - checkout
+        - run: pip install -e .
+        - run: pytest
+        - version-bump/check:
+            manifest-type: python-pyproject

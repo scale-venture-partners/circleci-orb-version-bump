@@ -1,0 +1,13 @@
+#!/bin/sh
+# Shellchecks, tests, packs, and validates the orb before allowing a commit.
+# Installed via scripts/install-hooks.sh — git doesn't track .git/hooks itself.
+set -eu
+
+for tool in shellcheck bats circleci; do
+  if ! command -v "$tool" >/dev/null 2>&1; then
+    echo "pre-commit: $tool not found on PATH." >&2
+    exit 1
+  fi
+done
+
+exec ./scripts/verify.sh

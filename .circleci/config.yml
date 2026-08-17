@@ -1,0 +1,56 @@
+version: 2.1
+
+jobs:
+  lint-and-test:
+    docker:
+      - image: cimg/base:current
+    steps:
+      - checkout
+      - run:
+          name: Install shellcheck, bats, and the circleci CLI
+          command: |
+            sudo apt-get update -qq
+            sudo apt-get install -y shellcheck bats
+            curl -fsSL https://raw.githubusercontent.com/CircleCI-Public/circleci-cli/main/install.sh | sudo bash
+      - run:
+          name: shellcheck
+          command: shellcheck -s sh src/scripts/*.sh
+      - run:
+          name: bats
+          command: bats test/
+      - run:
+          name: Pack and validate the orb
+          command: |
+            circleci orb pack src > orb.yml
+            circleci orb validate orb.yml
+      - persist_to_workspace:
+          root: .
+          paths:
+            - orb.yml
+
+  publish-dev:
+    docker:
+      - image: cimg/base:current
+    steps:
+      - checkout
+      - attach_workspace:
+          at: .
+      - run:
+          name: Install the circleci CLI
+          command: curl -fsSL https://raw.githubusercontent.com/CircleCI-Public/circleci-cli/main/install.sh | sudo bash
+      - run:
+          name: Publish a dev build
+          command: |
+            circleci orb publish orb.yml scale-venture-partners/version-bump@dev:"${CIRCLE_BRANCH}" --token "${CIRCLECI_ORB_PUBLISH_TOKEN}"
+
+workflows:
+  build:
+    jobs:
+      - lint-and-test
+      # Requires the `scale-venture-partners` orb namespace to be registered
+      # and a CIRCLECI_ORB_PUBLISH_TOKEN context configured — see README.md.
+      # Uncomment once both exist:
+      # - publish-dev:
+      #     requires:
+      #       - lint-and-test
+      #     context: orb-publishing

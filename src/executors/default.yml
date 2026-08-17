@@ -1,0 +1,7 @@
+description: >
+  A minimal executor with git available, for the standalone `check` job.
+  It does NOT include python3 or node — override `executor` on the job with
+  one that matches your manifest-type (e.g. cimg/python or cimg/node) unless
+  you're using manifest-type "generic".
+docker:
+  - image: cimg/base:current

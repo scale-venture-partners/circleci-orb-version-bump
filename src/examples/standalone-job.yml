@@ -1,0 +1,15 @@
+description: >
+  Use the standalone job in a repo with no existing job to attach the check
+  to. Override `executor` to match the manifest type (this example checks a
+  Node package.json, so it uses a Node executor).
+usage:
+  version: 2.1
+  orbs:
+    node: circleci/node@5
+    version-bump: scale-venture-partners/version-bump@1.0.0
+  workflows:
+    build:
+      jobs:
+        - version-bump/check:
+            manifest-type: node-package-json
+            executor: node/default
