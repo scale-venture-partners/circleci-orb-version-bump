@@ -9,13 +9,62 @@ regex-based fallback for anything else.
 
 ## Why
 
-Several repos hand-rolled a version of this check directly in
-`.circleci/config.yml`, copy-pasted and drifted repo to repo: some check
-`pyproject.toml`, one checks Node's `package.json` via inline `python3 -c`
-snippets, CHANGELOG enforcement is inconsistent, and two repos each grew
-their own ad-hoc exemption for docs-only PRs. This orb is one implementation,
-parameterized for those differences, so adopting it is a few lines of YAML
-instead of copying and adapting a shell block.
+Versioning and changelogs are only useful if they're actually kept up to
+date — and that's exactly the kind of bookkeeping that's easy to skip under
+deadline pressure, easy to leave out of a "just this once" PR, and, more and
+more, easy for an AI coding agent to skip entirely, since an agent optimizes
+for the task it was given and has no built-in reason to also remember "and
+now update `CHANGELOG.md`." A CI check is one of the few mechanisms that
+enforces this regardless of who — or what — opened the PR, without anyone
+having to remember to ask.
+
+### What a changelog actually buys you
+
+A `CHANGELOG.md`, kept in a convention like [Keep a
+Changelog](https://keepachangelog.com/), is a curated, per-release,
+human-readable summary of what changed — distinct from your commit history,
+which is an implementation log, not a communication tool. It answers the
+question a consumer actually has before upgrading: "what do I need to know
+before I bump this dependency?" — without making them read every commit or
+diff since the last release. A good changelog entry calls out breaking
+changes, deprecations, and security fixes explicitly, written at the moment
+someone has the most context to describe them — not months later, by
+someone else, trying to reconstruct intent from `git log`.
+
+### Why this matters more, not less, with agentic development
+
+As more of a codebase's changes come from AI coding agents rather than a
+human sitting down to write a PR by hand, two things get worse without a
+hard gate:
+
+- **Bookkeeping silently drops.** An agent asked to "add support for X"
+  will add support for X. It won't spontaneously decide to also bump the
+  version and write a changelog entry unless that's explicitly part of its
+  instructions — and even good instructions get missed under context
+  pressure, across long sessions, or when an agent is one of several
+  running in parallel. A CI check turns "please remember to do this" into
+  "the build won't pass until you do" — a hard constraint an agent (or a
+  human reviewing an agent's PR) can act on directly and unambiguously,
+  instead of a convention that depends on memory.
+- **Version collisions get more likely, not less.** Agentic workflows
+  increasingly mean several PRs in flight against the same repo at once —
+  parallel fan-out agents, background jobs, multiple people each running
+  their own assistant. Each one independently bumping "the next version" is
+  a much more common failure mode than it used to be, and it's exactly the
+  kind of thing that passes every individual PR's CI and then collides on
+  merge. Catching a missing bump — or, with `require-increase` turned on, a
+  version that regressed instead of advancing — at CI time surfaces that
+  collision at the PR itself, not after two branches have already landed.
+- **A structured changelog is something an agent can actually use.**
+  Free-form commit history is noisy to summarize; a disciplined, per-version
+  changelog is exactly the kind of structured artifact an LLM — yours, a
+  dependency-upgrade bot, or a teammate's assistant — can read to answer
+  "what changed," "is this safe to upgrade," or "what should the PR
+  description say," far more reliably than reconstructing it from a diff.
+
+This orb doesn't write your changelog for you or decide what "done" looks
+like — it just makes sure the bookkeeping actually happens, on every PR,
+regardless of who wrote the code.
 
 ## Usage
 
