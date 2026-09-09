@@ -43,14 +43,42 @@ jobs:
           command: |
             circleci orb publish orb.yml scale-venture-partners/version-bump@dev:"${CIRCLE_BRANCH}" --token "${CIRCLECI_ORB_PUBLISH_TOKEN}"
 
+  publish-release:
+    docker:
+      - image: cimg/base:current
+    steps:
+      - checkout
+      - attach_workspace:
+          at: .
+      - run:
+          name: Install the circleci CLI
+          command: curl -fsSL https://raw.githubusercontent.com/CircleCI-Public/circleci-cli/main/install.sh | sudo bash
+      - run:
+          name: Publish the tagged release
+          command: |
+            circleci orb publish orb.yml scale-venture-partners/version-bump@"${CIRCLE_TAG#v}" --token "${CIRCLECI_ORB_PUBLISH_TOKEN}"
+
 workflows:
   build:
     jobs:
-      - lint-and-test
-      # Requires the `scale-venture-partners` orb namespace to be registered
-      # and a CIRCLECI_ORB_PUBLISH_TOKEN context configured — see README.md.
-      # Uncomment once both exist:
-      # - publish-dev:
-      #     requires:
-      #       - lint-and-test
-      #     context: orb-publishing
+      - lint-and-test:
+          filters:
+            tags:
+              only: &release-tag /^v[0-9]+\.[0-9]+\.[0-9]+$/
+      # Requires the `orb-publishing` context (CIRCLECI_ORB_PUBLISH_TOKEN) — see README.md.
+      - publish-dev:
+          requires:
+            - lint-and-test
+          context: orb-publishing
+          filters:
+            tags:
+              ignore: /.*/
+      - publish-release:
+          requires:
+            - lint-and-test
+          context: orb-publishing
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: *release-tag
