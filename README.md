@@ -68,6 +68,18 @@ regardless of who wrote the code.
 
 ## Usage
 
+The orb isn't cut as a stable release yet — pin to the dev build instead of
+`@1.0.0` until a tagged release exists:
+
+```yaml
+orbs:
+  version-bump: scale-venture-partners/version-bump@dev:pilot
+```
+
+A `dev:` label can be overwritten by anyone in the org and expires after 90
+days of inactivity, so switch to a semver tag (`@1.0.0`, `@1.1.0`, ...) as
+soon as one is cut — see [Publishing](#publishing) for how releases happen.
+
 Compose the `check` command into a job you already have:
 
 ```yaml
@@ -156,16 +168,30 @@ orb has no external dependencies to fake). `src/commands/`, `src/jobs/`,
 
 ## Publishing
 
-Not yet published. Publishing needs:
+The `scale-venture-partners` orb namespace and the `version-bump` orb are
+already registered. CI (`.circleci/config.yml`) handles publishing from
+there:
 
-1. A registered CircleCI orb namespace for `scale-venture-partners`
-   (`circleci namespace create scale-venture-partners <vcs-type> <org>` —
-   needs org-admin access and a CircleCI API token).
-2. `circleci orb create scale-venture-partners/version-bump` (one-time, in
-   that namespace).
-3. `circleci orb publish orb.yml scale-venture-partners/version-bump@1.0.0`
-   for a real release, or `@dev:<label>` for a dev build to test against a
-   pilot repo first.
+- **Every branch push** runs `lint-and-test`, then publishes a dev build
+  labeled after the branch: `scale-venture-partners/version-bump@dev:<branch>`.
+  Use these to pilot a change in another repo before cutting a release.
+- **Pushing a semver tag** (`v1.0.0`, `v1.1.0`, ...) runs `lint-and-test`,
+  then publishes that exact version:
+  `scale-venture-partners/version-bump@1.0.0`. Tag from `main` once a change
+  is merged and you're ready to release:
+
+  ```bash
+  git checkout main && git pull
+  git tag v1.0.0
+  git push origin v1.0.0
+  ```
+
+Both publish jobs need the `orb-publishing` CircleCI context, holding a
+`CIRCLECI_ORB_PUBLISH_TOKEN` with publish rights on the
+`scale-venture-partners` namespace. This is a one-time, human step (org
+contexts and their secret values aren't creatable from a CI job): in
+CircleCI, go to Organization Settings → Contexts, create `orb-publishing`,
+and add `CIRCLECI_ORB_PUBLISH_TOKEN` there.
 
 ## License
 
