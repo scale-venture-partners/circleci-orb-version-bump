@@ -46,6 +46,7 @@ jobs:
           manifest-path: pilot/VERSION.txt
           version-pattern: 'version = "([0-9.]+)"'
           changelog-path: pilot/CHANGELOG.md
+          exempt-paths: "*.md,.circleci/*,LICENSE.txt,src/examples/*"
 
   publish-dev:
     docker:
