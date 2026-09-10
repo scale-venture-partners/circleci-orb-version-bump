@@ -26,10 +26,11 @@ jobs:
           name: bats
           command: bats test/
       - run:
-          name: Pack and validate the orb
-          command: |
-            circleci orb pack src > orb.yml
-            circleci orb validate orb.yml
+          name: Pack the orb
+          # Not `orb validate`: it calls the CircleCI API and needs an
+          # authenticated token this job doesn't have. `./scripts/verify.sh`
+          # covers validation locally (authenticated) before any real publish.
+          command: circleci orb pack src > orb.yml
       - persist_to_workspace:
           root: .
           paths:
