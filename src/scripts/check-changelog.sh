@@ -1,29 +1,11 @@
 #!/bin/sh
 # check-changelog.sh <changelog-path> <heading-pattern> <version>
 #
-# Exit 0 if <changelog-path> contains a heading matching <heading-pattern>
-# with "{version}" substituted for <version> (regex-escaped). Exit 1
-# otherwise, including if the changelog file itself is missing.
+# Thin wrapper over check-version-bump.sh's check_changelog(), the single
+# source of truth (see that file for why logic lives there, not here).
 set -eu
-
-changelog_path="$1"
-heading_pattern="$2"
-version="$3"
-
-if [ ! -f "$changelog_path" ]; then
-  echo "check-changelog.sh: changelog not found: $changelog_path" >&2
-  exit 1
-fi
-
-# shellcheck disable=SC2016
-escaped_version=$(printf '%s' "$version" | sed 's/[.[\*^$()+?{}|\\]/\\&/g')
-
-# Plain string splitting on the literal "{version}" token, not a sed
-# substitution: escaped_version contains backslashes, and sed's replacement
-# text treats backslashes specially (backreferences), silently stripping
-# them if passed through `s/.../.../`.
-prefix="${heading_pattern%%\{version\}*}"
-suffix="${heading_pattern#*\{version\}}"
-pattern="${prefix}${escaped_version}${suffix}"
-
-grep -qE "$pattern" "$changelog_path"
+# shellcheck disable=SC2034  # read by the sourced file below
+VERSION_BUMP_LIB_ONLY=1
+# shellcheck disable=SC1091
+. "$(cd -- "$(dirname -- "$0")" && pwd)/check-version-bump.sh"
+check_changelog "$@"
