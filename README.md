@@ -68,6 +68,16 @@ regardless of who wrote the code.
 
 ## Usage
 
+**Any org consuming this orb for the first time — dev build or tagged
+release alike — must enable "Allow uncertified public orbs" (Org Settings →
+Security in CircleCI).** This isn't a CircleCI-certified partner orb, so
+without that setting the pipeline fails at config-processing time with
+`Orb ... not loaded`, before any job runs or any status posts to GitHub —
+easy to mistake for the webhook/trigger not working at all. This applies
+regardless of version: certification is a separate CircleCI program from
+publishing to a namespace, so even a real `@1.0.0` release stays
+"uncertified" from a consuming org's point of view.
+
 The orb isn't cut as a stable release yet — pin to the dev build instead of
 `@1.0.0` until a tagged release exists:
 
@@ -159,12 +169,59 @@ shellcheck bats-core circleci`).
 ./scripts/install-hooks.sh   # once per clone: installs the pre-commit hook
 ```
 
-The scripts under `src/scripts/` are the actual logic and are unit- and
-integration-tested directly (real temporary git repos, no mocking — this
-orb has no external dependencies to fake). `src/commands/`, `src/jobs/`,
-`src/executors/`, and `src/examples/` are combined into the published
-`orb.yml` via `circleci orb pack src`; `orb.yml` itself is a build artifact
-(gitignored), not source.
+The scripts under `src/scripts/` are unit- and integration-tested directly
+(real temporary git repos, no mocking — this orb has no external
+dependencies to fake). `src/commands/`, `src/jobs/`, `src/executors/`, and
+`src/examples/` are combined into the published `orb.yml` via
+`circleci orb pack src`; `orb.yml` itself is a build artifact (gitignored),
+not source.
+
+**`check-version-bump.sh` is the only file that actually ships in the
+packed orb** — `src/commands/check.yml` inlines it via `<<include(...)>>`,
+and that's the sole mechanism `orb pack` has for pulling a file's content
+into `orb.yml`. It does *not* also bundle whatever other files that script
+happens to reference on disk: a first version of this orb had
+`check-version-bump.sh` shell out to four sibling scripts
+(`get-version.sh`, `compare-versions.sh`, `check-changelog.sh`,
+`changed-files-exempt.sh`) via a relative `$script_dir` path, which worked
+perfectly against a real git checkout (bats, `./scripts/verify.sh`) and
+failed on *every* real invocation of the published orb with
+`No such file or directory` — those four files simply aren't present
+anywhere in the packed artifact. Caught only by actually running the orb
+in CircleCI (the `pilot-check` job below), not by any local test.
+
+The fix, and the constraint to preserve going forward: all real logic
+(`get_version`, `compare_versions`, `check_changelog`,
+`changed_files_exempt`) lives as shell functions inside
+`check-version-bump.sh` itself. The four same-named files under
+`src/scripts/` still exist, but only as thin wrappers — each sources
+`check-version-bump.sh` with `VERSION_BUMP_LIB_ONLY=1` (which skips its
+auto-run of `main`) and calls the one function it wraps, purely so bats can
+keep exercising each function as its own script the way it always has.
+**Any new logic this orb needs must go inside `check-version-bump.sh`
+(as a function, called directly) — never in a new sibling file invoked by
+path, however natural that split feels; it will pass every local test and
+then fail identically once packed.**
+
+CI's `lint-and-test` job runs `circleci orb pack` but not `circleci orb
+validate` — validate calls the CircleCI API and needs an authenticated
+token this job doesn't have. `./scripts/verify.sh` covers validation
+locally (using your own authenticated CLI) before any real publish, and is
+the actual gate — CI passing is not proof the packed orb is valid.
+`lint-and-test` also installs a real Node.js binary before running bats:
+`cimg/base:current` has no `node`, and the `node-package-json` bats
+coverage needs a real one to exercise for real rather than mock out.
+
+`pilot/` is a throwaway fixture (`VERSION.txt` + `CHANGELOG.md`, generic
+manifest-type) that the `pilot-check` CI job runs the published orb
+against on every push — the fastest way to notice a real regression in the
+published artifact, as opposed to only in `src/scripts/`'s own tests.
+`pilot-check` pins `scale-venture-partners/version-bump@dev:dogfood`, a
+label maintained by hand (`circleci orb publish orb.yml
+scale-venture-partners/version-bump@dev:dogfood`) rather than by CI's own
+`publish-dev` job (which publishes per-branch as `dev:<branch>` instead) —
+after changing anything under `src/`, republish `dev:dogfood` yourself
+before expecting `pilot-check` to reflect the change.
 
 ## Publishing
 
