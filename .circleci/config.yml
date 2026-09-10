@@ -10,11 +10,15 @@ jobs:
     steps:
       - checkout
       - run:
-          name: Install shellcheck, bats, and the circleci CLI
+          name: Install shellcheck, bats, node, and the circleci CLI
           command: |
             sudo apt-get update -qq
             sudo apt-get install -y shellcheck bats
             curl -fsSL https://raw.githubusercontent.com/CircleCI-Public/circleci-cli/main/install.sh | sudo bash
+            # node-package-json bats coverage needs a real `node` — cimg/base
+            # doesn't include one.
+            curl -fsSL https://nodejs.org/dist/v20.11.1/node-v20.11.1-linux-x64.tar.xz -o /tmp/node.tar.xz
+            sudo tar -xJf /tmp/node.tar.xz -C /usr/local --strip-components=1
       - run:
           name: shellcheck
           command: shellcheck -s sh src/scripts/*.sh
