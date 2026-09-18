@@ -1,5 +1,8 @@
 # circleci-orb-version-bump
 
+[![CircleCI Orb](https://img.shields.io/badge/CircleCI_Orb-version--bump-00C756.svg)](https://circleci.com/developer/orbs/orb/scale-venture-partners/version-bump)
+[![License: MIT](https://img.shields.io/badge/License-MIT-00C756.svg)](LICENSE.txt)
+
 A [CircleCI orb](https://circleci.com/docs/orbs/use/orb-intro/) that fails a
 build when a package manifest's version wasn't bumped relative to the base
 branch — with optional CHANGELOG enforcement, a monotonic-increase check,
@@ -62,9 +65,9 @@ hard gate:
   "what changed," "is this safe to upgrade," or "what should the PR
   description say," far more reliably than reconstructing it from a diff.
 
-This orb doesn't write your changelog for you or decide what "done" looks
-like — it just makes sure the bookkeeping actually happens, on every PR,
-regardless of who wrote the code.
+This orb enforces that the bookkeeping happens on every PR, regardless of
+who wrote the code. It doesn't write the changelog or decide what "done"
+looks like.
 
 ## Usage
 
@@ -252,4 +255,4 @@ and add `CIRCLECI_ORB_PUBLISH_TOKEN` there.
 
 ## License
 
-MIT — see [LICENSE.txt](LICENSE.txt).
+[MIT](LICENSE.txt) © Scale Venture Partners.
