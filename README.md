@@ -157,7 +157,9 @@ See `src/examples/` for the full runnable examples this README pulls from.
 | `require-increase` | `false` | require the new version to be numerically greater, not just different — **off by default** so adopting this orb never tightens behavior relative to a "must differ" check |
 
 `python-pyproject` reads `[project].version` (PEP 621), falling back to
-`[tool.poetry].version`, then a bare top-level `version` key.
+`[tool.poetry].version`, then a bare top-level `version` key. It parses the
+file with `tomllib`, so the executor's `python3` must be 3.11 or newer (on
+3.10 the step fails with `No module named 'tomllib'`).
 `node-package-json` reads the top-level `.version` field.
 
 ## Development
